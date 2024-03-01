@@ -22,6 +22,10 @@ const config: HardhatUserConfig = {
       url: process.env.SEPOLIA_RPC,
       accounts: accounts,
     },
+    baseSepolia: {
+      url: "https://base-sepolia.blockpi.network/v1/rpc/public",
+      accounts: accounts,
+    },
   },
 };
 
