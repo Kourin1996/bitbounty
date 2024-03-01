@@ -5,6 +5,8 @@ import {FunctionsClient} from "@chainlink/contracts/src/v0.8/functions/dev/v1_0_
 import {ConfirmedOwner} from "@chainlink/contracts/src/v0.8/shared/access/ConfirmedOwner.sol";
 import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/dev/v1_0_0/libraries/FunctionsRequest.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
+
 import "../libs/risc0-ethereum/contracts/src/IRiscZeroVerifier.sol";
 
 contract GitHubFundManager is FunctionsClient, ConfirmedOwner {
@@ -31,7 +33,7 @@ contract GitHubFundManager is FunctionsClient, ConfirmedOwner {
         string  ipfsHash;
     }
 
-    bytes32 public constant RISC0_IMAGE_ID = bytes32(0x7e1e473d66daf6500dad4141e4939f1bd9b11e50cd6d984f1bbaaccafc527788);
+    bytes32 public constant RISC0_IMAGE_ID = bytes32(0xeddd7b1df093cc5609d825fc39a9bb69a0790db7cf2d494e7aaacb534ae7a1f0);
 
     // https://docs.chain.link/chainlink-functions/supported-networks
     // Ethereum Sepolia
@@ -57,11 +59,13 @@ contract GitHubFundManager is FunctionsClient, ConfirmedOwner {
     uint32 gasLimit = 300000;
     string source =
         "const orgAndRepo = args[0];"
+        "const fundId = args[1];"
+        "const amount = args[2];"
         "const res1 = await Functions.makeHttpRequest({"
         "url: `https://api.github.com/repos/${orgAndRepo}/contributors`"
         "});"
         "if (res1.error) {"
-        "throw Error('Request failed: ' + JSON.stringify(res1));"
+        "throw Error('Request1 failed: ' + JSON.stringify(res1));"
         "};"
         "const { data } = res1;"
         "const contributors = data.map((x) => ({id: x.id, login: x.login, contributions: x.contributions}));"
@@ -76,7 +80,18 @@ contract GitHubFundManager is FunctionsClient, ConfirmedOwner {
         "data: {pinataContent: contributors}"
         "});"
         "if (res2.error) {"
-        "throw Error('Request failed: ' + JSON.stringify(res2) + JSON.stringify(contributors));"
+        "throw Error('Request2 failed: ' + JSON.stringify(res2) + JSON.stringify(contributors));"
+        "};"
+        "const res3 = await Functions.makeHttpRequest({"
+        "url: 'https://ethdenver-2024.onrender.com',"
+        "method: 'POST',"
+        "headers: {"
+        "'Content-Type': 'application/json',"
+        "},"
+        "data: {contributions: contributors, fund_id: Number.parseInt(fundId), value: Number.parseInt(amount)}"
+        "});"
+        "if (res3.error) {"
+        "throw Error('Request3 failed: ' + JSON.stringify(res2) + JSON.stringify(contributors));"
         "};"
         "return Functions.encodeString(res2.data.IpfsHash);";
 
@@ -136,8 +151,12 @@ contract GitHubFundManager is FunctionsClient, ConfirmedOwner {
             token.transferFrom(msg.sender, address(this), amount);
         }
 
-        string[] memory args = new string[](1);
+        uint256 fundId = nextFundId;
+
+        string[] memory args = new string[](3);
         args[0] = orgAndName;
+        args[1] = Strings.toString(fundId);
+        args[2] = Strings.toString(amount);
         FunctionsRequest.Request memory req;
         req.initializeRequestForInlineJavaScript(source);
         req.setArgs(args);
@@ -149,7 +168,6 @@ contract GitHubFundManager is FunctionsClient, ConfirmedOwner {
             chainLinkFunctionsDonID
         );
 
-        uint256 fundId = nextFundId;
         funds[fundId] = Fund({
             funder: msg.sender,
             tokenAddress: tokenAddress,
@@ -164,7 +182,6 @@ contract GitHubFundManager is FunctionsClient, ConfirmedOwner {
 
         emit Funded(fundId, orgAndName, msg.sender, tokenAddress, amount);
     }
-
 
     function distributeFund(uint256 fundId, string[] memory logins, uint256[] memory shares, bytes memory journal, bytes32 postStateDigest, bytes memory seal) external {
         require(logins.length == shares.length, "logins and shares length mismatch");

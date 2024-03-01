@@ -20,7 +20,6 @@ import {Script} from "forge-std/Script.sol";
 import {console2} from "forge-std/console2.sol";
 import {IRiscZeroVerifier} from "risc0/IRiscZeroVerifier.sol";
 import {ControlID, RiscZeroGroth16Verifier} from "risc0/groth16/RiscZeroGroth16Verifier.sol";
-
 import {EvenNumber} from "../contracts/EvenNumber.sol";
 
 /// @notice Deployment script for the RISC Zero starter project.

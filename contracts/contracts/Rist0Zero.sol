@@ -4,7 +4,7 @@ pragma solidity ^0.8.24;
 import "../libs/risc0-ethereum/contracts/src/IRiscZeroVerifier.sol";
 
 contract Risc0Test {
-    bytes32 public constant IMAGE_ID = bytes32(0x7e1e473d66daf6500dad4141e4939f1bd9b11e50cd6d984f1bbaaccafc527788);
+    bytes32 public constant IMAGE_ID = bytes32(0xeddd7b1df093cc5609d825fc39a9bb69a0790db7cf2d494e7aaacb534ae7a1f0);
 
     IRiscZeroVerifier public immutable verifier;
 
