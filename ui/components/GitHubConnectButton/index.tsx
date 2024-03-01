@@ -11,20 +11,24 @@ export const GitHubConnectButton = () => {
 
   if (userName) {
     return (
-      <Button
-        color="default"
-        variant="solid"
-        endContent={<FaGithub />}
-        style={{ backgroundColor: "#2b3137" }}
-        disabled={myProfile.isLoading}
-      >
-        {userName}
-      </Button>
+      <Link href="/profile">
+        <Button
+          isLoading={myProfile.isLoading}
+          color="default"
+          variant="solid"
+          endContent={<FaGithub />}
+          style={{ backgroundColor: "#2b3137" }}
+          disabled={myProfile.isLoading}
+        >
+          {userName}
+        </Button>
+      </Link>
     );
   }
 
   return (
     <Button
+      isLoading={myProfile.isLoading}
       href={`https://github.com/login/oauth/authorize?client_id=${process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID}`}
       as={Link}
       color="default"
@@ -33,7 +37,7 @@ export const GitHubConnectButton = () => {
       style={{ backgroundColor: "#2b3137" }}
       disabled={myProfile.isPaused || myProfile.isLoading}
     >
-      Connect to GitHub
+      SignIn GitHub
     </Button>
   );
 };
