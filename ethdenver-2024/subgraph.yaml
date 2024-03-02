@@ -8,9 +8,9 @@ dataSources:
     name: GitHubFundManager
     network: sepolia
     source:
-      address: "0xd5bA02D6c98EDaA843dABD3a48d20e190b416e90"
+      address: "0x76E4D8e6253B139DE8fcF1Fa6b4108157BF2340A"
       abi: GitHubFundManager
-      startBlock: 5396218
+      startBlock: 5396888
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7

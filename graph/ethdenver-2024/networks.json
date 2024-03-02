@@ -1,8 +1,0 @@
-{
-  "sepolia": {
-    "GitHubFundManager": {
-      "address": "0xd5bA02D6c98EDaA843dABD3a48d20e190b416e90",
-      "startBlock": 5396218
-    }
-  }
-}

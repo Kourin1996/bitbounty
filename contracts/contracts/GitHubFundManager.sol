@@ -87,7 +87,7 @@ contract GitHubFundManager is FunctionsClient, ConfirmedOwner {
     event Funded(uint256 indexed fundId, string orgAndName, address funder, address token, uint256 amount);
     event CalculationRequested(uint256 indexed fundId, string ipfsHash);
     event ChainLinkFunctionFailed(uint256 indexed fundId, bytes error);
-    event FundDistributed(uint256 indexed fundId, string[] logins, uint256[] shares);
+    event FundDistributed(uint256 indexed fundId, string orgAndName, string[] logins, uint256[] shares);
     event ShareWithdrwan(uint256 fundId, address token, address account, uint256 share);
 
     function hasGitHubPass(string memory githubLogin) view public returns (bool) {
@@ -193,7 +193,7 @@ contract GitHubFundManager is FunctionsClient, ConfirmedOwner {
 
         funds[fundId].distributed = true;
 
-        emit FundDistributed(fundId, logins, shares);
+        emit FundDistributed(fundId, funds[fundId].orgAndName, logins, shares);
     }
 
     function withdrawFund(uint256 fundId, string memory login) external {
