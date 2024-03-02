@@ -16,7 +16,7 @@
 // to the Bonsai proving service and publish the received proofs directly
 // to your deployed app contract.
 
-use alloy_primitives::U256;
+use alloy_primitives::{U256};
 use alloy_sol_types::{sol, SolInterface};
 use apps::{BonsaiProver, TxSender};
 use methods::IS_EVEN_ELF;
@@ -28,7 +28,7 @@ use axum::{
     Json, Router,
 };
 use std::{future::IntoFuture, sync::mpsc::{channel, Sender}, thread};
-
+use tower_http::cors::Any;
 
 // `IFundManager` interface automatically generated via the alloy `sol!` macro.
 sol! {
@@ -46,7 +46,7 @@ struct Config {
     port: u64,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone)]
 struct ServerConfig {
     request_sender: Sender<CalculateRequest>,
 }
@@ -96,6 +96,12 @@ async fn main() {
     let app = Router::new()
     .route("/", get(root))
     .route("/calculate", post(calculate_shares))
+    .layer(
+        tower_http::cors::CorsLayer::new()
+          .allow_origin("http://localhost:3000".parse::<axum::http::HeaderValue>().unwrap())
+          .allow_headers(Any)
+          .allow_methods(Any),
+      )
     .with_state(server_config);
 
     let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", config.port.to_string())).await.unwrap();
@@ -170,10 +176,10 @@ async fn root() -> &'static str {
 async fn calculate_shares(
     State(server_config): State<ServerConfig>,
     Json(payload): Json<CalculateRequest>,
-) -> &'static str {
+) -> &'static str  {
     println!("handle request: config={:?}, payload={:?}", server_config, payload);
 
     server_config.request_sender.send(payload).unwrap();
 
-    ""
+    "ok"
 }

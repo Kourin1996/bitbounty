@@ -31,6 +31,7 @@ contract GitHubFundManager is FunctionsClient, ConfirmedOwner {
         string  orgAndName;
         bytes32 chainLinkFunctionRequestId;
         string  ipfsHash;
+        bool distributed;
     }
 
     bytes32 public constant RISC0_IMAGE_ID = bytes32(0xeddd7b1df093cc5609d825fc39a9bb69a0790db7cf2d494e7aaacb534ae7a1f0);
@@ -59,8 +60,6 @@ contract GitHubFundManager is FunctionsClient, ConfirmedOwner {
     uint32 gasLimit = 300000;
     string source =
         "const orgAndRepo = args[0];"
-        "const fundId = args[1];"
-        "const amount = args[2];"
         "const res1 = await Functions.makeHttpRequest({"
         "url: `https://api.github.com/repos/${orgAndRepo}/contributors`"
         "});"
@@ -82,17 +81,6 @@ contract GitHubFundManager is FunctionsClient, ConfirmedOwner {
         "if (res2.error) {"
         "throw Error('Request2 failed: ' + JSON.stringify(res2) + JSON.stringify(contributors));"
         "};"
-        "const res3 = await Functions.makeHttpRequest({"
-        "url: 'https://ethdenver-2024.onrender.com',"
-        "method: 'POST',"
-        "headers: {"
-        "'Content-Type': 'application/json',"
-        "},"
-        "data: {contributions: contributors, fund_id: Number.parseInt(fundId), value: Number.parseInt(amount)}"
-        "});"
-        "if (res3.error) {"
-        "throw Error('Request3 failed: ' + JSON.stringify(res2) + JSON.stringify(contributors));"
-        "};"
         "return Functions.encodeString(res2.data.IpfsHash);";
 
     event GitHubPassRegistered(string login, address addr);
@@ -101,6 +89,18 @@ contract GitHubFundManager is FunctionsClient, ConfirmedOwner {
     event ChainLinkFunctionFailed(uint256 indexed fundId, bytes error);
     event FundDistributed(uint256 indexed fundId, string[] logins, uint256[] shares);
     event ShareWithdrwan(uint256 fundId, address token, address account, uint256 share);
+
+    function hasGitHubPass(string memory githubLogin) view public returns (bool) {
+        return gitHubLoginToAddress[githubLogin] != address(0x0);
+    }
+
+    function getIpfsHash(uint256 fundId) view public returns (string memory) {
+        return funds[fundId].ipfsHash;
+    }
+
+    function isDistributed(uint256 fundId) view public returns (bool) {
+        return funds[fundId].distributed;
+    }
 
     function registerGitHubPass(
         string memory gitHubLogin,
@@ -113,13 +113,13 @@ contract GitHubFundManager is FunctionsClient, ConfirmedOwner {
         address validator,
         bytes memory validatorSignature
     ) external {
-        bytes32 paramsHash1 = keccak256(abi.encodePacked(taskId, schemaId, validator));
-        address recoveredAllocator = recoverSigner(paramsHash1, allocatorSignature);
-        require(recoveredAllocator == allocator, "allocator's signature is invalid");
+        // bytes32 paramsHash1 = keccak256(abi.encodePacked(taskId, schemaId, validator));
+        // address recoveredAllocator = recoverSigner(paramsHash1, allocatorSignature);
+        // require(recoveredAllocator == allocator, "allocator's signature is invalid");
 
-        bytes32 paramsHash2 = keccak256(abi.encodePacked(taskId, schemaId, uHash, publicFieldsHash));
-        address recoveredValidator = recoverSigner(paramsHash2, validatorSignature);
-        require(recoveredValidator == validator, "validator's signature is invalid");
+        // bytes32 paramsHash2 = keccak256(abi.encodePacked(taskId, schemaId, uHash, publicFieldsHash));
+        // address recoveredValidator = recoverSigner(paramsHash2, validatorSignature);
+        // require(recoveredValidator == validator, "validator's signature is invalid");
 
         githubPass[msg.sender] = GitHubPass({
             gitHubLogin: gitHubLogin,
@@ -153,10 +153,8 @@ contract GitHubFundManager is FunctionsClient, ConfirmedOwner {
 
         uint256 fundId = nextFundId;
 
-        string[] memory args = new string[](3);
+        string[] memory args = new string[](1);
         args[0] = orgAndName;
-        args[1] = Strings.toString(fundId);
-        args[2] = Strings.toString(amount);
         FunctionsRequest.Request memory req;
         req.initializeRequestForInlineJavaScript(source);
         req.setArgs(args);
@@ -174,7 +172,8 @@ contract GitHubFundManager is FunctionsClient, ConfirmedOwner {
             orgAndName: orgAndName,
             amount: amount,
             chainLinkFunctionRequestId: requestId,
-            ipfsHash: ""
+            ipfsHash: "",
+            distributed: false
         });
         requestIdToFundId[requestId] = fundId;
 
@@ -184,12 +183,15 @@ contract GitHubFundManager is FunctionsClient, ConfirmedOwner {
     }
 
     function distributeFund(uint256 fundId, string[] memory logins, uint256[] memory shares, bytes memory journal, bytes32 postStateDigest, bytes memory seal) external {
+        require(!funds[fundId].distributed, "distributed already");
         require(logins.length == shares.length, "logins and shares length mismatch");
         require(risc0Verifier.verify(seal, RISC0_IMAGE_ID, postStateDigest, sha256(journal)));
 
         for(uint256 i = 0; i < logins.length; i++) {
             fundShares[fundId][logins[i]] = shares[i];
         }
+
+        funds[fundId].distributed = true;
 
         emit FundDistributed(fundId, logins, shares);
     }
@@ -219,10 +221,9 @@ contract GitHubFundManager is FunctionsClient, ConfirmedOwner {
         require(fund.funder != address(0x0), "fund doesn't exist");
 
         if (err.length == 0) {
-            string memory ipfsHash = string(response);
-            fund.ipfsHash = ipfsHash;
+            funds[fundId].ipfsHash = string(response);
 
-            emit CalculationRequested(fundId, ipfsHash);
+            emit CalculationRequested(fundId, funds[fundId].ipfsHash);
         } else {
             emit ChainLinkFunctionFailed(fundId, err);
         }

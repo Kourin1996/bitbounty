@@ -1,11 +1,15 @@
 import { Button } from "@nextui-org/react";
 import { GitHubConnectButton } from "../components/GitHubConnectButton";
-import { Card, CardBody } from "@nextui-org/react";
 import { RepositoryListItem } from "../components/RepositoryListItem";
 import Link from "next/link";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 
 export default function Home() {
-  const repositories = ["0xPolygon/polygon-edge", "smartcontractkit/chainlink"];
+  const repositories = [
+    "0xPolygon/polygon-edge",
+    "smartcontractkit/chainlink",
+    "smartcontractkit/solana-starter-kit",
+  ];
 
   return (
     <main
@@ -28,7 +32,10 @@ export default function Home() {
         <h1 style={{ color: "#ECEDEE", fontSize: "24px", fontWeight: "700" }}>
           BitBounty
         </h1>
-        <GitHubConnectButton />
+        <div style={{ display: "flex", gap: 16 }}>
+          <ConnectButton />
+          <GitHubConnectButton />
+        </div>
       </div>
 
       <div>

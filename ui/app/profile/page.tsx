@@ -5,6 +5,7 @@ import { useGitHubAccount } from "../../hooks/useGitHubAccount";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Avatar, Button, Select, SelectItem } from "@nextui-org/react";
+import { IssueZKPassButton } from "./IssueZKPassButton";
 
 const chains = [
   {
@@ -115,9 +116,7 @@ export default function Home() {
           </a>
         </div>
         <div style={{ marginLeft: "auto" }}>
-          <Button color="default" variant="bordered">
-            Issue ZKPass
-          </Button>
+          <IssueZKPassButton />
         </div>
       </div>
 

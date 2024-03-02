@@ -4,7 +4,18 @@ import { useSearchParams } from "next/navigation";
 import { Avatar, Button, Card, Divider, Input } from "@nextui-org/react";
 import { useGitHubContributors } from "../../hooks/useGitHubContributors";
 import { Select, SelectItem } from "@nextui-org/react";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  useContractRead,
+  useReadContract,
+  useWaitForTransactionReceipt,
+  useWriteContract,
+} from "wagmi";
+import { parseEther } from "viem";
+import * as ethers from "ethers";
+import axios from "axios";
+
+const abi = require("../../constants/abi.json");
 
 // ETH: https://tokens.1inch.io/0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee.png
 // USDT: https://tokens.1inch.io/0xdac17f958d2ee523a2206206994597c13d831ec7.png
@@ -16,18 +27,21 @@ const tokens = [
     label: "ETH",
     image:
       "https://tokens.1inch.io/0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee.png",
+    address: "0x0000000000000000000000000000000000000000",
   },
   {
     id: "USDC",
     label: "USDC",
     image:
       "https://tokens.1inch.io/0xdac17f958d2ee523a2206206994597c13d831ec7.png",
+    address: "0xFd57b4ddBf88a4e07fF4e34C487b99af2Fe82a05",
   },
   {
     id: "EURC",
     label: "EURC",
     image:
       "https://tokens.1inch.io/0x1abaea1f7c830bd89acc67ec4af516284b1bc33c.png",
+    address: "0x466D489b6d36E7E3b824ef491C225F5830E81cC1",
   },
 ];
 
@@ -38,6 +52,7 @@ export default function Home() {
 
   const [amount, setAmount] = useState<string | undefined>(undefined);
   const [token, setToken] = useState<string | undefined>(undefined);
+  const [loading, setLoading] = useState(false);
 
   const totals = useMemo(
     () =>
@@ -52,7 +67,7 @@ export default function Home() {
       ...x,
       share:
         amount && totals
-          ? (Number.parseInt(amount) * x.contributions) / totals
+          ? (Number.parseFloat(amount) * x.contributions) / totals
           : null,
     }));
   }, [contributorsQuery.data, amount, totals]);
@@ -62,7 +77,172 @@ export default function Home() {
     [token]
   );
 
-  console.log({ amount, token, totals });
+  const { writeContractAsync, isSuccess, error } = useWriteContract();
+
+  const [txHash, setTxHash] = useState<string | undefined>(undefined);
+  const receipt = useWaitForTransactionReceipt({
+    hash: txHash as any,
+  });
+
+  const onClickSupport = useCallback(async () => {
+    const tokenAddress = tokens.find((t) => t.id === token)?.address;
+
+    console.log("args", [
+      orgAndName!,
+      tokenAddress!,
+      parseEther((Number.parseFloat(amount!) * 1000).toFixed()),
+    ]);
+
+    setLoading(true);
+
+    // TODO: approve ERC20 transfer
+    const value = parseEther((Number.parseFloat(amount!) / 1000).toString());
+    const hash = await writeContractAsync({
+      abi,
+      address: process.env.NEXT_PUBLIC_GITHUB_FUND_MANAGER! as any,
+      functionName: "fundToRepo",
+      args: [orgAndName!, tokenAddress!, value],
+      value:
+        tokenAddress == "0x0000000000000000000000000000000000000000"
+          ? value
+          : undefined,
+    });
+
+    console.log("transaction hash", hash);
+
+    setTxHash(hash);
+  }, [amount, orgAndName, token, writeContractAsync]);
+
+  const [fundId, setFundId] = useState<number | undefined>(undefined);
+  const [fundedAmount, setFundedAmount] = useState<string | undefined>(
+    undefined
+  );
+
+  useEffect(() => {
+    if (receipt.data) {
+      console.log("receipt", receipt);
+
+      const itface = new ethers.Interface([
+        "event Funded(uint256 indexed fundId, string orgAndName, address funder, address token, uint256 amount)",
+      ]);
+
+      for (const log of receipt?.data?.logs ?? []) {
+        try {
+          const parsed = itface.parseLog(log);
+          if (parsed !== null) {
+            const fundId = parsed.args[0];
+            const amount = parsed.args[4];
+            setFundId(fundId);
+            setFundedAmount(amount);
+          }
+        } catch (error) {
+          console.error(error);
+        }
+      }
+    }
+  }, [receipt]);
+
+  const ipfsHashQuery = useReadContract({
+    abi,
+    address: process.env.NEXT_PUBLIC_GITHUB_FUND_MANAGER! as any,
+    functionName: "getIpfsHash",
+    args: [fundId as any],
+    query: {
+      enabled: fundId !== undefined,
+    },
+  });
+
+  const isDistributedQuery = useReadContract({
+    abi,
+    address: process.env.NEXT_PUBLIC_GITHUB_FUND_MANAGER! as any,
+    functionName: "isDistributed",
+    args: [fundId as any],
+    query: {
+      enabled: fundId !== undefined,
+    },
+  });
+
+  useEffect(() => {
+    if (fundId !== undefined && !ipfsHashQuery.data) {
+      const timer = setInterval(() => {
+        console.log("refetch ipfsHashQuery");
+
+        ipfsHashQuery.refetch();
+      }, 5000);
+
+      return () => clearInterval(timer);
+    }
+  }, [fundId, ipfsHashQuery, ipfsHashQuery.data]);
+
+  useEffect(() => {
+    if (fundId !== undefined && !isDistributedQuery.data) {
+      const timer = setInterval(() => {
+        console.log("refetch isDistributedQuery");
+
+        isDistributedQuery.refetch();
+      }, 5000);
+
+      return () => clearInterval(timer);
+    }
+  }, [fundId, isDistributedQuery, isDistributedQuery.data]);
+
+  useEffect(() => {
+    if (ipfsHashQuery.data) {
+      // todo: send to rust
+      const ipfsHash = ipfsHashQuery.data;
+      const amount = ethers.getBigInt(fundedAmount!).toString();
+
+      console.log("request", { ipfsHash, fundId, amount });
+
+      (async () => {
+        const jsonFetchRes = await axios.get(
+          `https://lavender-probable-flamingo-693.mypinata.cloud/ipfs/${ipfsHash}`
+        );
+        console.log("jsonFetchRes", jsonFetchRes);
+        console.log("request", {
+          fund_id: Number(fundId),
+          value: Number.parseInt(amount),
+          contributions: jsonFetchRes.data,
+        });
+
+        const requestProofRes = await axios.post(
+          "http://localhost:8000/calculate",
+          {
+            fund_id: Number(fundId),
+            value: Number.parseInt(amount),
+            contributions: jsonFetchRes.data,
+          }
+        );
+        console.log("requestProofRes", requestProofRes);
+      })();
+    }
+  }, [fundId, fundedAmount, ipfsHashQuery.data]);
+
+  useEffect(() => {
+    if (isDistributedQuery.data) {
+      console.log("completed!!!");
+      setLoading(false);
+    }
+  }, [isDistributedQuery, isDistributedQuery.data]);
+
+  console.log("ipfsHashQuery", fundId, ipfsHashQuery.data, ipfsHashQuery.error);
+  console.log(
+    "isDistributedQuery",
+    fundId,
+    isDistributedQuery,
+    isDistributedQuery.data
+  );
+
+  console.log({
+    amount,
+    token,
+    totals,
+    isSuccess,
+    error,
+    receipt: receipt.data,
+    fundId,
+    fundedAmount,
+  });
 
   return (
     <main
@@ -194,7 +374,9 @@ export default function Home() {
         </div>
       </div>
       <div style={{ display: "flex", justifyContent: "center" }}>
-        <Button color="primary">Support</Button>
+        <Button color="default" onClick={onClickSupport} isLoading={loading}>
+          {loading ? "Sending" : "Support"}
+        </Button>
       </div>
     </main>
   );
