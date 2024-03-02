@@ -6,8 +6,9 @@ import { ConnectButton } from "@rainbow-me/rainbowkit";
 
 export default function Home() {
   const repositories = [
+    "bitcoin/bitcoin",
+    "ethereum/go-ethereum",
     "0xPolygon/polygon-edge",
-    "smartcontractkit/chainlink",
     "smartcontractkit/solana-starter-kit",
   ];
 

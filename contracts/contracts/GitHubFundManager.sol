@@ -88,6 +88,7 @@ contract GitHubFundManager is FunctionsClient, ConfirmedOwner {
     event CalculationRequested(uint256 indexed fundId, string ipfsHash);
     event ChainLinkFunctionFailed(uint256 indexed fundId, bytes error);
     event FundDistributed(uint256 indexed fundId, string orgAndName, string[] logins, uint256[] shares);
+    event FundDistributedToUser(uint256 indexed fundId, string indexed login, string orgAndName, uint256 share);
     event ShareWithdrwan(uint256 fundId, address token, address account, uint256 share);
 
     function hasGitHubPass(string memory githubLogin) view public returns (bool) {
@@ -113,13 +114,13 @@ contract GitHubFundManager is FunctionsClient, ConfirmedOwner {
         address validator,
         bytes memory validatorSignature
     ) external {
-        // bytes32 paramsHash1 = keccak256(abi.encodePacked(taskId, schemaId, validator));
-        // address recoveredAllocator = recoverSigner(paramsHash1, allocatorSignature);
-        // require(recoveredAllocator == allocator, "allocator's signature is invalid");
+        bytes32 paramsHash1 = keccak256(abi.encodePacked(taskId, schemaId, validator));
+        address recoveredAllocator = recoverSigner(paramsHash1, allocatorSignature);
+        require(recoveredAllocator == allocator, "allocator's signature is invalid");
 
-        // bytes32 paramsHash2 = keccak256(abi.encodePacked(taskId, schemaId, uHash, publicFieldsHash));
-        // address recoveredValidator = recoverSigner(paramsHash2, validatorSignature);
-        // require(recoveredValidator == validator, "validator's signature is invalid");
+        bytes32 paramsHash2 = keccak256(abi.encodePacked(taskId, schemaId, uHash, publicFieldsHash));
+        address recoveredValidator = recoverSigner(paramsHash2, validatorSignature);
+        require(recoveredValidator == validator, "validator's signature is invalid");
 
         githubPass[msg.sender] = GitHubPass({
             gitHubLogin: gitHubLogin,
@@ -194,6 +195,9 @@ contract GitHubFundManager is FunctionsClient, ConfirmedOwner {
         funds[fundId].distributed = true;
 
         emit FundDistributed(fundId, funds[fundId].orgAndName, logins, shares);
+        for(uint256 i=0; i<logins.length; i++) {
+            emit FundDistributedToUser(fundId, logins[i], funds[fundId].orgAndName, shares[i]);
+        }
     }
 
     function withdrawFund(uint256 fundId, string memory login) external {
@@ -228,6 +232,29 @@ contract GitHubFundManager is FunctionsClient, ConfirmedOwner {
             emit ChainLinkFunctionFailed(fundId, err);
         }
     }
+
+    // event Trigger(uint256 fundId, address account);
+    // event Performed(uint256 fundId, address account);
+
+    // function testEmit(uint256 fundId, address account) external {
+    //     emit Trigger(fundId, account);
+    // }
+
+    // function checkLog(Log calldata log, bytes memory _checkData) external pure returns (bool upkeepNeeded, bytes memory performData) {
+    //     uint256 fundId = uint256(log.topics[0]);
+    //     address account = address(uint160(uint256(log.topics[1])));
+        
+    //     // upkeepNeeded = keccak256(abi.encodePacked(account)) == keccak256(checkData);
+    //     // performData = abi.encodePacked(fundId, account);
+
+    //     upkeepNeeded = true;
+    //     performData = abi.encodePacked(fundId, account);
+    // }
+
+    // function performUpkeep(bytes calldata performData) external {
+    //     (uint256 fundId, address account) = abi.decode(performData, (uint256, address));
+    //     emit Performed(fundId, account);
+    // }
 
     function recoverSigner(bytes32 digest, bytes memory signature) public pure returns (address) {
         (bytes32 r, bytes32 s, uint8 v) = splitSignature(signature);

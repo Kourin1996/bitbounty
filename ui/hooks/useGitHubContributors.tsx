@@ -13,8 +13,8 @@ export const useGitHubContributors = (orgAndName: string) => {
     },
     select: (data) =>
       data
-        .filter((x) => x.type !== "Bot")
-        .map((x) => ({
+        .filter((x: any) => x.type !== "Bot")
+        .map((x: any) => ({
           login: x.login,
           id: x.id,
           avatar_url: x.avatar_url,

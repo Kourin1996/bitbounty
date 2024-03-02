@@ -57,13 +57,16 @@ export default function Home() {
   const totals = useMemo(
     () =>
       contributorsQuery.data
-        ? contributorsQuery.data.reduce((acc, x) => acc + x.contributions, 0)
+        ? contributorsQuery.data.reduce(
+            (acc: any, x: any) => acc + x.contributions,
+            0
+          )
         : null,
     [contributorsQuery.data]
   );
 
   const contributors = useMemo(() => {
-    return (contributorsQuery.data ?? []).map((x) => ({
+    return (contributorsQuery.data ?? []).map((x: any) => ({
       ...x,
       share:
         amount && totals
@@ -327,7 +330,7 @@ export default function Home() {
           }}
         >
           <Card>
-            {contributors.map((c) => (
+            {contributors.map((c: any) => (
               <>
                 <div
                   style={{

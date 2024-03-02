@@ -7,8 +7,20 @@ import { getDefaultConfig, RainbowKitProvider } from "@rainbow-me/rainbowkit";
 import { WagmiProvider, http } from "wagmi";
 import { sepolia, baseSepolia } from "wagmi/chains";
 import "@rainbow-me/rainbowkit/styles.css";
+import {
+  ApolloClient,
+  InMemoryCache,
+  ApolloProvider,
+  gql,
+} from "@apollo/client";
+import React from "react";
 
 const queryClient = new QueryClient();
+
+const apolloClient = new ApolloClient({
+  uri: "https://api.studio.thegraph.com/query/37331/ethdenver-2024/version/latest",
+  cache: new InMemoryCache(),
+});
 
 export const config = getDefaultConfig({
   appName: "My RainbowKit App",
@@ -23,13 +35,17 @@ export const config = getDefaultConfig({
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
-      <JotaiProvider>
-        <NextUIProvider>
-          <WagmiProvider config={config}>
-            <RainbowKitProvider>{children}</RainbowKitProvider>
-          </WagmiProvider>
-        </NextUIProvider>
-      </JotaiProvider>
+      <ApolloProvider client={apolloClient}>
+        <JotaiProvider>
+          <NextUIProvider>
+            <WagmiProvider config={config}>
+              <RainbowKitProvider>
+                <React.Suspense fallback={null}>{children}</React.Suspense>
+              </RainbowKitProvider>
+            </WagmiProvider>
+          </NextUIProvider>
+        </JotaiProvider>
+      </ApolloProvider>
     </QueryClientProvider>
   );
 }

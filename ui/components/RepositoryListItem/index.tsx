@@ -3,6 +3,25 @@
 import { Avatar, Card, CardBody } from "@nextui-org/react";
 import classes from "./index.module.css";
 import { useGitHubRepository } from "../../hooks/useGitHubRepository";
+import { gql, useQuery } from "@apollo/client";
+import { useMemo } from "react";
+import { ethers } from "ethers";
+
+const query = gql`
+  query Funded {
+    fundeds {
+      id
+      fundId
+      orgAndName
+      funder
+      token
+      amount
+      blockNumber
+      blockTimestamp
+      transactionHash
+    }
+  }
+`;
 
 type Props = {
   orgAndName: string;
@@ -10,7 +29,18 @@ type Props = {
 
 export const RepositoryListItem = ({ orgAndName }: Props) => {
   const repoQuery = useGitHubRepository(orgAndName);
-  const usdFunded = 1000;
+  const fundedQuery = useQuery(query);
+
+  const totalFunded = useMemo(() => {
+    let total = BigInt(0);
+    (fundedQuery?.data?.fundeds ?? [])
+      .filter((x: any) => x.orgAndName === orgAndName)
+      .forEach((x: any) => {
+        total = total + BigInt(x.amount);
+      });
+
+    return total > 0 ? ethers.formatUnits(total * BigInt(1000), 18) : null;
+  }, [fundedQuery?.data?.fundeds, orgAndName]);
 
   return (
     <Card
@@ -38,9 +68,11 @@ export const RepositoryListItem = ({ orgAndName }: Props) => {
             </h2>
           </div>
 
-          <span style={{ fontWeight: "700", fontSize: "18px" }}>
-            {usdFunded} USD Funded
-          </span>
+          {totalFunded !== null && (
+            <span style={{ fontWeight: "700", fontSize: "18px" }}>
+              {totalFunded} Ether Funded
+            </span>
+          )}
         </div>
       </CardBody>
     </Card>

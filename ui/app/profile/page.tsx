@@ -2,10 +2,30 @@
 
 import { useSearchParams } from "next/navigation";
 import { useGitHubAccount } from "../../hooks/useGitHubAccount";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Avatar, Button, Select, SelectItem } from "@nextui-org/react";
+import {
+  Avatar,
+  Button,
+  Card,
+  CardBody,
+  Listbox,
+  ListboxItem,
+  Select,
+  SelectItem,
+} from "@nextui-org/react";
 import { IssueZKPassButton } from "./IssueZKPassButton";
+import { gql, useQuery } from "@apollo/client";
+import { ethers } from "ethers";
+
+const formatFixedPoints = (s: string) => {
+  if (s.includes(".")) {
+    const dotPos = s.indexOf(".");
+    return s.slice(0, Math.min(s.length, dotPos + 3));
+  } else {
+    return s;
+  }
+};
 
 const chains = [
   {
@@ -41,12 +61,85 @@ const tokens = [
   },
 ];
 
+const query = gql`
+  query Funded {
+    fundeds {
+      fundId
+      orgAndName
+      funder
+      token
+      amount
+      blockTimestamp
+    }
+
+    fundDistributeds {
+      fundId
+      logins
+      shares
+    }
+
+    shareWithdrwans {
+      id
+      fundId
+      token
+      account
+      share
+    }
+  }
+`;
+
 export default function Home() {
   const myProfile = useGitHubAccount();
   const router = useRouter();
 
-  const [chain, setChain] = useState<string | undefined>(undefined);
-  const [token, setToken] = useState<string | undefined>(undefined);
+  // const [chain, setChain] = useState<string | undefined>(undefined);
+  // const [token, setToken] = useState<string | undefined>(undefined);
+
+  // const login = myProfile?.data?.login;
+  const login = "pappas999";
+
+  const queryData = useQuery(query);
+
+  const data = useMemo(() => {
+    const fundDistributeds = queryData.data?.fundDistributeds ?? [];
+    const fundeds = queryData.data?.fundeds ?? [];
+    const shareWithdrwans = queryData.data?.shareWithdrwans ?? [];
+
+    return fundeds
+      .filter((x: any) => {
+        return fundDistributeds.some((y: any) => {
+          return x.fundId === y.fundId && y.logins.includes(login);
+        });
+      })
+      .map((x: any) => {
+        const received =
+          shareWithdrwans.indexOf((s: any) => s.fundId === x.fundId) !== -1;
+        const amount = fundDistributeds.find((y: any) => y.fundId === x.fundId);
+
+        let shareIndex = -1;
+        if (amount) {
+          shareIndex = amount.logins.indexOf(login);
+        }
+
+        console.log("debug::x", x);
+
+        return {
+          received,
+          orgAndName: x.orgAndName,
+          share: shareIndex !== -1 ? amount.shares[shareIndex] : null,
+          date: new Date(
+            Number.parseInt(x.blockTimestamp) * 1000
+          ).toDateString(),
+        };
+      });
+  }, [
+    login,
+    queryData.data?.fundDistributeds,
+    queryData.data?.fundeds,
+    queryData.data?.shareWithdrwans,
+  ]);
+
+  console.log("debug::data", queryData, data);
 
   useEffect(() => {
     if (
@@ -121,7 +214,7 @@ export default function Home() {
       </div>
 
       <div style={{ marginTop: "36px" }}>
-        <span style={{ fontSize: "24px !important", fontWeight: "600" }}>
+        {/* <span style={{ fontSize: "24px !important", fontWeight: "600" }}>
           Recipient Info
         </span>
         <div
@@ -185,12 +278,40 @@ export default function Home() {
           <Button color="default" style={{ height: "100%" }}>
             Update
           </Button>
-        </div>
+        </div> */}
 
-        <div style={{ marginTop: "36px" }}>
+        <div>
           <span style={{ fontSize: "24px !important", fontWeight: "600" }}>
             Receipts
           </span>
+          <Card style={{ width: "100%", marginTop: "12px" }}>
+            <CardBody>
+              <Listbox>
+                {data.map((x: any) => (
+                  <ListboxItem showDivider key="new">
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
+                      <span style={{ fontWeight: "600", fontSize: "18px" }}>
+                        {"0xPolygon/polygon-edge"}
+                      </span>
+                      <span style={{ fontWeight: "600", fontSize: "18px" }}>
+                        {formatFixedPoints(
+                          ethers.formatUnits(BigInt(x.share) * BigInt(1000), 18)
+                        )}
+                        {"  Ether  Received"}
+                        {` (${x.date}) `}
+                      </span>
+                    </div>
+                  </ListboxItem>
+                ))}
+              </Listbox>
+            </CardBody>
+          </Card>
         </div>
       </div>
     </main>
