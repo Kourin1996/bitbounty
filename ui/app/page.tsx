@@ -8,8 +8,10 @@ export default function Home() {
   const repositories = [
     "bitcoin/bitcoin",
     "ethereum/go-ethereum",
+    "risc0/risc0",
     "0xPolygon/polygon-edge",
-    "smartcontractkit/solana-starter-kit",
+    "graphprotocol/indexer",
+    "smartcontractkit/chainlink",
   ];
 
   return (
@@ -87,11 +89,7 @@ export default function Home() {
           }}
         >
           {repositories.map((r) => (
-            <Link
-              key={r}
-              href={`/repository?name=${r}`}
-              style={{ width: "100%" }}
-            >
+            <Link key={r} href={`/demo1?name=${r}`} style={{ width: "100%" }}>
               <RepositoryListItem orgAndName={r} />
             </Link>
           ))}

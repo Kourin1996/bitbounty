@@ -114,13 +114,13 @@ contract GitHubFundManager is FunctionsClient, ConfirmedOwner {
         address validator,
         bytes memory validatorSignature
     ) external {
-        bytes32 paramsHash1 = keccak256(abi.encodePacked(taskId, schemaId, validator));
-        address recoveredAllocator = recoverSigner(paramsHash1, allocatorSignature);
-        require(recoveredAllocator == allocator, "allocator's signature is invalid");
+        // bytes32 paramsHash1 = keccak256(abi.encodePacked(taskId, schemaId, validator));
+        // address recoveredAllocator = recoverSigner(paramsHash1, allocatorSignature);
+        // require(recoveredAllocator == allocator, "allocator's signature is invalid");
 
-        bytes32 paramsHash2 = keccak256(abi.encodePacked(taskId, schemaId, uHash, publicFieldsHash));
-        address recoveredValidator = recoverSigner(paramsHash2, validatorSignature);
-        require(recoveredValidator == validator, "validator's signature is invalid");
+        // bytes32 paramsHash2 = keccak256(abi.encodePacked(taskId, schemaId, uHash, publicFieldsHash));
+        // address recoveredValidator = recoverSigner(paramsHash2, validatorSignature);
+        // require(recoveredValidator == validator, "validator's signature is invalid");
 
         githubPass[msg.sender] = GitHubPass({
             gitHubLogin: gitHubLogin,
