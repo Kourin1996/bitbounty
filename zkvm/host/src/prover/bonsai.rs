@@ -1,15 +1,15 @@
-use std::sync::Arc;
-use std::thread::sleep;
-use std::time::Duration;
-
-use alloy_primitives::FixedBytes;
 use anyhow;
 use anyhow::Context;
 use bonsai_sdk;
 use bonsai_sdk::alpha::responses::SnarkReceipt;
 use bonsai_sdk::alpha::SdkErr;
-use risc0_ethereum_contracts::groth16::Seal;
 use risc0_zkvm::{compute_image_id, Receipt};
+use std::sync::Arc;
+use std::thread::sleep;
+use std::time::Duration;
+use risc0_ethereum_contracts::groth16;
+use serde::Serialize;
+use methods::BIT_BOUNTY_RISC0_GUEST_ID;
 
 pub struct BonsaiProver {
     url: String,
@@ -26,11 +26,11 @@ impl BonsaiProver {
         }
     }
 
-    pub async fn prove(
+    pub fn prove(
         &self,
         elf: &[u8],
-        input: &[u8],
-    ) -> anyhow::Result<(String, Vec<u8>, FixedBytes<32>, Vec<u8>)> {
+        input: Vec<u8>,
+    ) -> anyhow::Result<(String, Vec<u8>, Vec<u8>, Vec<u8>)> {
         let client = bonsai_sdk::alpha::Client::from_parts(
             self.url.clone(),
             self.api_key.clone(),
@@ -42,24 +42,18 @@ impl BonsaiProver {
         let image_id = Self::prepare_image(&client, elf)?;
 
         // Prepare input data and upload it.
-        let input_id = client.upload_input(input.to_vec())?;
+        let input_id = client.upload_input(input)?;
 
         // Start a session running the prover.
-        let session_uuid = Self::create_session(client.clone(), image_id.clone(), input_id).await?;
+        let (session_uuid, receipt) =
+            Self::create_session(client.clone(), image_id.clone(), input_id)?;
 
         // Fetch the snark.
-        let snark_receipt = Self::fetch_snark_proof(client.clone(), session_uuid).await?;
+        let snark_receipt = Self::fetch_snark_proof(client.clone(), session_uuid)?;
 
-        let snark = snark_receipt.snark;
-        log::debug!("Snark proof!: {snark:?}");
-
-        let seal = Seal::abi_encode(snark).context("Read seal")?;
-        let post_state_digest: FixedBytes<32> = snark_receipt
-            .post_state_digest
-            .as_slice()
-            .try_into()
-            .context("Read post_state_digest")?;
-        let journal = snark_receipt.journal;
+        let journal = snark_receipt.journal.to_vec();
+        let seal = groth16::encode(snark_receipt.snark.to_vec()).unwrap();
+        let post_state_digest = snark_receipt.post_state_digest.to_vec();
 
         Ok((image_id, journal, post_state_digest, seal))
     }
@@ -79,14 +73,17 @@ impl BonsaiProver {
         Ok(image_id_hex)
     }
 
-    async fn create_session(
+    fn create_session(
         client: Arc<bonsai_sdk::alpha::Client>,
         image_id: String,
         input_id: String,
-    ) -> Result<String, SdkErr> {
-        println!("creating a session, image_id={}, input_id={}", image_id, input_id);
+    ) -> Result<(String, Receipt), SdkErr> {
+        println!(
+            "creating a session, image_id={}, input_id={}",
+            image_id, input_id
+        );
 
-        let handler = tokio::task::spawn_blocking(move || {
+        let handler = std::thread::spawn(move || {
             let session = client.create_session(image_id, input_id, vec![])?;
             println!("created session: {}", session.uuid);
             log::info!("Created session: {}", session.uuid);
@@ -101,7 +98,11 @@ impl BonsaiProver {
                     }
                 };
 
-                println!("Current status: {} - state: {}", res.status, res.state.clone().unwrap_or_default());
+                println!(
+                    "Current status: {} - state: {}",
+                    res.status,
+                    res.state.clone().unwrap_or_default()
+                );
 
                 match res.status.as_str() {
                     "RUNNING" => {
@@ -114,15 +115,15 @@ impl BonsaiProver {
                     }
                     "SUCCEEDED" => {
                         // Download the receipt, containing the output.
-                        // let receipt_url = res
-                        //     .receipt_url
-                        //     .context("API error, missing receipt on completed session").unwrap();
-                        // let receipt_buf = client.download(&receipt_url).unwrap();
-                        // let receipt: Receipt = bincode::deserialize(&receipt_buf).unwrap();
+                        let receipt_url = res
+                            .receipt_url
+                            .context("API error, missing receipt on completed session")
+                            .unwrap();
+                        let receipt_buf = client.download(&receipt_url).unwrap();
+                        let receipt: Receipt = bincode::deserialize(&receipt_buf).unwrap();
+                        // receipt.verify(BIT_BOUNTY_RISC0_GUEST_ID).expect("Receipt verification failed");
 
-                        println!("Session succeeded");
-
-                        return Ok(session.uuid);
+                        return Ok((session.uuid, receipt));
                     }
                     _ => {
                         // FAILED, TIMED_OUT, ABORTED
@@ -136,16 +137,16 @@ impl BonsaiProver {
             }
         });
 
-        handler.await.unwrap()
+        handler.join().unwrap()
     }
 
-    async fn fetch_snark_proof(
+    fn fetch_snark_proof(
         client: Arc<bonsai_sdk::alpha::Client>,
         session_uuid: String,
     ) -> Result<SnarkReceipt, SdkErr> {
         println!("fetching snark proof, session_uuid={}", session_uuid);
 
-        let handler = tokio::task::spawn_blocking(move || {
+        let handler = std::thread::spawn(move || {
             let res = client.create_snark(session_uuid);
             let res = match res {
                 Ok(res) => res,
@@ -178,7 +179,7 @@ impl BonsaiProver {
                             None => {
                                 panic!("No output in snark session");
                             }
-                        }
+                        };
                     }
                     _ => {
                         // FAILED if the guest throws panic
@@ -193,6 +194,6 @@ impl BonsaiProver {
             }
         });
 
-        handler.await.unwrap()
+        handler.join().unwrap()
     }
 }
