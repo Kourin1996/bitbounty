@@ -34,6 +34,6 @@ export async function GET(request: NextRequest) {
   const accessToken = body.access_token;
 
   return NextResponse.redirect(
-    `${process.env.APP_ORIGIN}?access_token=${accessToken}`
+    `${process.env.NEXT_PUBLIC_APP_ORIGIN}?access_token=${accessToken}`
   );
 }
