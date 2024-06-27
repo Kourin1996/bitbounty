@@ -6,6 +6,9 @@ const nextConfig = {
   experimental: {
     missingSuspenseWithCSRBailout: false,
   },
+  env: {
+    GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET,
+  }
 };
 
 export default nextConfig;
