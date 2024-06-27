@@ -32,10 +32,26 @@ export async function GET(request: NextRequest) {
   console.log("fetched GitHub access token", body);
 
   const accessToken = body.access_token;
+  const error = body.error;
+  const errorDescription = body.error_description;
 
+  let redirectTarget = process.env.NEXT_PUBLIC_APP_ORIGIN;
+  let queries: string[] = [];
   if (accessToken) {
+    queries.push(`access_token=${accessToken}`);
+  }
+  if (error) {
+    queries.push(`error=${error}`);
+  }
+  if (errorDescription) {
+    queries.push(`errorDescription=${errorDescription}`);
+  }
+
+  if (queries.length > 0) {
     return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_ORIGIN}?access_token=${accessToken}`
+      `${process.env.NEXT_PUBLIC_APP_ORIGIN}?${queries.join('&')}`
     );
+  } else {
+    return NextResponse.redirect(process.env.NEXT_PUBLIC_APP_ORIGIN!);
   }
 }
