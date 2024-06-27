@@ -11,7 +11,7 @@ export const GitHubConnectButton = () => {
 
   if (userName) {
     return (
-      <Link href="/profile">
+      <Link href={`/profile/${userName}`}>
         <Button
           isLoading={myProfile.isLoading}
           color="default"

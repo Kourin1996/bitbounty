@@ -1,0 +1,16 @@
+.contributions-accordion > div {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.contributions-card-title > h2 > button {
+    padding-top: 12px;
+    padding-bottom: 12px;
+    padding-left: 24px;
+    padding-right: 12px;
+}
+
+.contributions-card-title > section > div {
+    padding-top: 0;
+    padding-bottom: 0;
+}

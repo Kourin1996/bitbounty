@@ -1,98 +1,49 @@
-import { Button } from "@nextui-org/react";
-import { GitHubConnectButton } from "../components/GitHubConnectButton";
-import { RepositoryListItem } from "../components/RepositoryListItem";
-import Link from "next/link";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
 
-export default function Home() {
-  const repositories = [
-    "bitcoin/bitcoin",
-    "ethereum/go-ethereum",
-    "risc0/risc0",
-    "0xPolygon/polygon-edge",
-    "graphprotocol/indexer",
-    "smartcontractkit/chainlink",
-  ];
+import { Header } from "@components/Header";
+import { NewRepositoryModal } from "./NewRepositoryModal";
+import { RepositoryList } from "./RepositoryList";
 
+const Title = () => {
   return (
-    <main
-      className="flex min-h-screen"
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        padding: "0px 64px",
-      }}
-    >
-      <div
+    <div>
+      <p
         style={{
-          margin: "32px 0px 0px",
-          width: "100%",
-          display: "flex",
-          justifyContent: "space-between",
+          marginTop: "32px",
+          textAlign: "center",
+          color: "#ECEDEE",
+          fontSize: "24px !important",
+          fontWeight: "700",
         }}
       >
-        <h1 style={{ color: "#ECEDEE", fontSize: "24px", fontWeight: "700" }}>
-          BitBounty
-        </h1>
-        <div style={{ display: "flex", gap: 16 }}>
-          <ConnectButton />
-          <GitHubConnectButton />
-        </div>
-      </div>
+        Boost innovation with every bit
+      </p>
+      <p
+        style={{
+          marginTop: "8px",
+          textAlign: "center",
+          color: "#ECEDEE",
+          fontSize: "24px !important",
+          fontWeight: "700",
+        }}
+      >
+        Every contribution rewarded
+      </p>
+    </div>
+  )
+}
 
-      <div>
-        <p
-          style={{
-            marginTop: "32px",
-            textAlign: "center",
-            color: "#ECEDEE",
-            fontSize: "24px !important",
-            fontWeight: "700",
-          }}
-        >
-          Boost innovation with every bit
-        </p>
-        <p
-          style={{
-            marginTop: "8px",
-            textAlign: "center",
-            color: "#ECEDEE",
-            fontSize: "24px !important",
-            fontWeight: "700",
-          }}
-        >
-          Every contribution rewarded
-        </p>
-      </div>
+export default function Home() {
+  return (
+    <main className="flex min-h-screen flex-col items-center pt-8 px-16">
+      <Header showsGitHubButton />
+      <Title />
 
-      <div style={{ width: "100%", marginTop: "48px" }}>
-        <div
-          style={{ width: "100%", display: "flex", justifyContent: "flex-end" }}
-        >
-          <Button
-            color="default"
-            style={{
-              color: "rgb(236, 237, 238)",
-            }}
-          >
-            Add new Repository
-          </Button>
+      <div className="w-full mt-12">
+        <div className="w-full flex justify-end">
+          <NewRepositoryModal />
         </div>
-        <div
-          style={{
-            marginTop: "18px",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: "24px",
-          }}
-        >
-          {repositories.map((r) => (
-            <Link key={r} href={`/demo1?name=${r}`} style={{ width: "100%" }}>
-              <RepositoryListItem orgAndName={r} />
-            </Link>
-          ))}
+        <div className="mt-5 flex flex-col items-center gap-6">
+          <RepositoryList />
         </div>
       </div>
     </main>

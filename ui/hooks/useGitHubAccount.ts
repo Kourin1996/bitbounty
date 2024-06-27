@@ -56,3 +56,20 @@ export const useGitHubAccount = () => {
     },
   });
 };
+
+export const useGithubProfile = (login: string) => {
+  return useQuery<GitHubProfile>({
+    queryKey: ["GitHub/Profile", login],
+    enabled: login !== "",
+    queryFn: async () => {
+      const res = await fetch(`https://api.github.com/users/${login}`, {
+        headers: {
+          Accept: "application/vnd.github+json",
+          "X-GitHub-Api-Version": "2022-11-28",
+        },
+      });
+
+      return res.json();
+    },
+  });
+}

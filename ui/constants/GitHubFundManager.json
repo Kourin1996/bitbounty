@@ -1,0 +1,1000 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_chainLinkRouter",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "_chainLinkDonId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint64",
+        "name": "_chainLinkSubscriptionId",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint8",
+        "name": "_chainLinkJwtSecretSlotId",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint64",
+        "name": "_chainLinkJwtSecretVersion",
+        "type": "uint64"
+      },
+      {
+        "internalType": "address",
+        "name": "_risc0Verifier",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "_risc0ImageId",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [],
+    "name": "EmptyArgs",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "EmptySource",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NoInlineSecrets",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "OnlyRouterCanFulfill",
+    "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "requestId",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes",
+        "name": "response",
+        "type": "bytes"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes",
+        "name": "error",
+        "type": "bytes"
+      }
+    ],
+    "name": "ChainLinkFunctionFullfilled",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "requestId",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "subscriptionId",
+        "type": "uint64"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint32",
+        "name": "gasLimit",
+        "type": "uint32"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "organization",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "repository",
+        "type": "string"
+      }
+    ],
+    "name": "ChainLinkFunctionRequested",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "githubLogin",
+        "type": "string"
+      }
+    ],
+    "name": "GitHubAccountAssociated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "from",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "to",
+        "type": "address"
+      }
+    ],
+    "name": "OwnershipTransferRequested",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "from",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "to",
+        "type": "address"
+      }
+    ],
+    "name": "OwnershipTransferred",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "repositoryIndex",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "githubOrganization",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "githubRepository",
+        "type": "string"
+      }
+    ],
+    "name": "RepositoryAdded",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "id",
+        "type": "bytes32"
+      }
+    ],
+    "name": "RequestFulfilled",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "id",
+        "type": "bytes32"
+      }
+    ],
+    "name": "RequestSent",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "repositoryIndex",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "fundIndex",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "tokenAddress",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "string[]",
+        "name": "githubLogins",
+        "type": "string[]"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256[]",
+        "name": "amounts",
+        "type": "uint256[]"
+      }
+    ],
+    "name": "TokenDistributed",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "repositoryIndex",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "fundIndex",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "tokenAddress",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "funder",
+        "type": "address"
+      }
+    ],
+    "name": "TokenFundedToRepository",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "repositoryIndex",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "githubLogin",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "tokenAddress",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "recipient",
+        "type": "address"
+      }
+    ],
+    "name": "TokenWithdrawn",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "acceptOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "name": "chainLinkFunctionRequestIdToFundIndex",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "defaultAllocator",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes",
+        "name": "seal",
+        "type": "bytes"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "postStateDigest",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes",
+        "name": "journal",
+        "type": "bytes"
+      }
+    ],
+    "name": "distributeFund",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "distributedAmounts",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "organization",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "repository",
+        "type": "string"
+      },
+      {
+        "internalType": "address",
+        "name": "tokenAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "fundRepository",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "funds",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "index",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "repositoryIndex",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "funder",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "tokenAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "string",
+        "name": "organization",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "repository",
+        "type": "string"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "chainLinkFunctionRequestId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "string",
+        "name": "ipfsHash",
+        "type": "string"
+      },
+      {
+        "internalType": "bool",
+        "name": "isIpfsHashStored",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "isDistributed",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "fundIndex",
+        "type": "uint256"
+      }
+    ],
+    "name": "getFundIpfsHash",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "name": "githubLoginHashToAddress",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "requestId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes",
+        "name": "response",
+        "type": "bytes"
+      },
+      {
+        "internalType": "bytes",
+        "name": "err",
+        "type": "bytes"
+      }
+    ],
+    "name": "handleOracleFulfillment",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "imageId",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "githubLogin",
+        "type": "string"
+      }
+    ],
+    "name": "isGitHubAccountRegistered",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "nextFundId",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "nextRepositoryIndex",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "owner",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "gitHubLogin",
+        "type": "string"
+      },
+      {
+        "components": [
+          {
+            "internalType": "bytes32",
+            "name": "taskId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "schemaId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "uHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "publicFieldsHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "address",
+            "name": "validator",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes",
+            "name": "allocatorSignature",
+            "type": "bytes"
+          },
+          {
+            "internalType": "bytes",
+            "name": "validatorSignature",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct ZKPassProof",
+        "name": "proof",
+        "type": "tuple"
+      }
+    ],
+    "name": "registerGitHubPass",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "name": "repositoryIndicies",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "to",
+        "type": "address"
+      }
+    ],
+    "name": "transferOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "_donId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint64",
+        "name": "_subscriptionId",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint8",
+        "name": "_jwtSecretSlotId",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint64",
+        "name": "_jwtSecretVersion",
+        "type": "uint64"
+      }
+    ],
+    "name": "updateChainLinkFunctionParameters",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_verifier",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "_imageId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "updateRisc0Parameters",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "verifier",
+    "outputs": [
+      {
+        "internalType": "contract IRiscZeroVerifier",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "_taskId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "_schemaId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "_validator",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes",
+        "name": "_allocatorSignature",
+        "type": "bytes"
+      }
+    ],
+    "name": "verifyAllocatorSignature",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes",
+        "name": "seal",
+        "type": "bytes"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "journalDigest",
+        "type": "bytes32"
+      }
+    ],
+    "name": "verifyRisc0Proof",
+    "outputs": [],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "_taskId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "_schemaId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "_uHash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "_publicFieldsHash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "_validator",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes",
+        "name": "_validatorSignature",
+        "type": "bytes"
+      }
+    ],
+    "name": "verifyValidatorSignature",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "bytes32",
+            "name": "taskId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "schemaId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "uHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "publicFieldsHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "address",
+            "name": "validator",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes",
+            "name": "allocatorSignature",
+            "type": "bytes"
+          },
+          {
+            "internalType": "bytes",
+            "name": "validatorSignature",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct ZKPassProof",
+        "name": "_proof",
+        "type": "tuple"
+      }
+    ],
+    "name": "verifyZKPass",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "repositoryIndex",
+        "type": "uint256"
+      },
+      {
+        "internalType": "string",
+        "name": "githubLogin",
+        "type": "string"
+      },
+      {
+        "internalType": "address",
+        "name": "tokenAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "recipient",
+        "type": "address"
+      }
+    ],
+    "name": "withdrawFund",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

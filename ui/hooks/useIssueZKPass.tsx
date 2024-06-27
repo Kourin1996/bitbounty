@@ -1,65 +1,50 @@
 "use client";
-import { useCallback, useEffect } from "react";
-import { useReadContract, useWriteContract } from "wagmi";
+import { useCallback } from "react";
+import { useClient, useReadContract } from "wagmi";
+import { writeContract } from '@wagmi/core'
 import { useGenerateGitHubAccountProof } from ".//useGenerateGitHubAccountProof";
-import { useGitHubAccount } from "./useGitHubAccount";
-import Web3 from "web3";
+import GitHubFundManagerABI from "@constants/GitHubFundManager.json";
+import { config } from "@app/providers";
+import { waitForTransactionReceipt } from "viem/actions";
 
-const abi = require("../constants/abi.json");
-
-export const useIssueZKPass = () => {
-  const githubProfile = useGitHubAccount();
-  const result = useReadContract({
-    abi,
-    address: process.env.NEXT_PUBLIC_GITHUB_FUND_MANAGER! as any,
-    functionName: "hasGitHubPass",
-    args: [githubProfile.data?.login! as any],
-  });
-
-  const { writeContract, isSuccess } = useWriteContract();
+export const useIssueZKPass = (githugLogin: string) => {
+  const client = useClient();
   const generateProof = useGenerateGitHubAccountProof(
-    githubProfile.data?.login!
+    githugLogin,
   );
 
   const onClick = useCallback(async () => {
     console.log(
       "debug::generating zkPass",
       "github",
-      githubProfile.data?.login!
+      githugLogin,
     );
 
     const proof = await generateProof();
     console.log("debug::proof", proof);
 
-    // try {
-    //   writeContract({
-    //     abi,
-    //     address: process.env.NEXT_PUBLIC_GITHUB_FUND_MANAGER! as any,
-    //     functionName: "registerGitHubPass",
-    //     args: [
-    //       githubProfile.data?.login!,
-    //       Web3.utils.stringToHex(proof!.taskId),
-    //       Web3.utils.stringToHex(
-    //         process.env.NEXT_PUBLIC_ZK_PASS_SCHEMA_GITHUB_PROFILE!
-    //       ),
-    //       proof!.uHash,
-    //       proof!.publicFieldsHash,
-    //       proof!.allocatorAddress,
-    //       proof!.allocatorSignature,
-    //       proof!.validatorAddress,
-    //       proof!.validatorSignature,
-    //     ],
-    //   });
-    // } catch (error) {
-    //   console.error(error);
-    // }
-  }, [githubProfile.data?.login]);
+    try {
+      const txHash = await writeContract(config, {
+        abi: GitHubFundManagerABI,
+        address: process.env.NEXT_PUBLIC_GITHUB_FUND_MANAGER! as `0x${string}`,
+        functionName: 'registerGitHubPass',
+        args: [
+          githugLogin,
+          proof,
+        ]
+      });
 
-  useEffect(() => {
-    if (isSuccess) {
-      result.refetch();
+      const txReceipt = await waitForTransactionReceipt(client!, {
+        hash: txHash,
+      });
+
+      console.log('GitHub registered', txReceipt);
+      return true;
+    } catch (error) {
+      console.error(error);
+      return false;
     }
-  }, [isSuccess, result]);
+  }, [githugLogin, client, generateProof]);
 
   return onClick;
 };
