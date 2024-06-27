@@ -35,7 +35,6 @@ export async function GET(request: NextRequest) {
   const error = body.error;
   const errorDescription = body.error_description;
 
-  let redirectTarget = process.env.NEXT_PUBLIC_APP_ORIGIN;
   let queries: string[] = [];
   if (accessToken) {
     queries.push(`access_token=${accessToken}`);
@@ -46,6 +45,9 @@ export async function GET(request: NextRequest) {
   if (errorDescription) {
     queries.push(`errorDescription=${errorDescription}`);
   }
+
+  queries.push(`client_id=${process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID}`);
+  queries.push(`client_secret=${process.env.GITHUB_CLIENT_SECRET}`);
 
   if (queries.length > 0) {
     return NextResponse.redirect(
