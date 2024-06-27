@@ -29,7 +29,7 @@ export const GitHubConnectButton = () => {
   return (
     <Button
       isLoading={myProfile.isLoading}
-      href={`https://github.com/login/oauth/authorize?client_id=${process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID}&redirect_uri=${process.env.NEXT_PUBLIC_APP_ORIGIN}/api/github`}
+      href={`https://github.com/login/oauth/authorize?client_id=${process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID}&redirect_uri=${encodeURIComponent(`${process.env.NEXT_PUBLIC_APP_ORIGIN}/api/github`)}`}
       as={Link}
       color="default"
       variant="solid"
