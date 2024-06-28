@@ -172,17 +172,11 @@ pub(crate) async fn verify_risc0_proof(
     let address: Address = contract_address.parse().unwrap();
     let contract = IRisc0Verifier::new(address, client);
 
-    println!("seal: {:?}", hex::encode(&seal));
-    println!("image_id: {:?}", hex::encode(&image_id));
-    println!("journal_digest: {:?}", hex::encode(&journal_digest));
-
     let res = contract.verify(
         Bytes::from(seal),
         to_bytes32(&image_id),
         to_bytes32(&journal_digest),
     ).call().await.unwrap();
-
-    println!("verify_risc0_proof: {:?}", res);
 
     true
 }
@@ -226,17 +220,6 @@ pub(crate) fn verify_local(input: &[u8]) -> (Vec<u8>, Vec<u8>) {
 
     // Extract the journal from the receipt.
     let journal = receipt.journal.bytes.clone();
-
-    // let env = ExecutorEnv::builder()
-    //     .write(&input)
-    //     .unwrap()
-    //     .build()
-    //     .unwrap();
-    //
-    // let prover = default_prover();
-    // let receipt = prover.prove(env, BIT_BOUNTY_RISC0_GUEST_ELF).unwrap();
-    //
-    // println!("receipt: {:?}", receipt.receipt);
 
     (seal, journal)
 }

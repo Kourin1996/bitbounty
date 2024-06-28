@@ -1,0 +1,7 @@
+version: '3'
+services:
+  api:
+    image: kourin1996/bitbounty-api:latest
+    restart: always
+    env_file:
+      - .env

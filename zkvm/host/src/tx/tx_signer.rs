@@ -1,9 +1,8 @@
+use ethers::abi::AbiEncode;
 use ethers::addressbook::Address;
 use ethers::core::k256;
 use ethers::middleware::SignerMiddleware;
-use ethers::prelude::{
-    Http, LocalWallet, Provider, TransactionReceipt, TransactionRequest, Wallet,
-};
+use ethers::prelude::{Http, LocalWallet, PendingTransaction, Provider, TransactionReceipt, TransactionRequest, Wallet};
 use ethers::providers::Middleware;
 use ethers::signers::Signer;
 
@@ -32,7 +31,7 @@ impl TxSender {
         })
     }
 
-    pub async fn send(&self, calldata: Vec<u8>) -> anyhow::Result<Option<TransactionReceipt>> {
+    pub async fn send(&self, calldata: Vec<u8>) -> anyhow::Result<String> {
         let tx = TransactionRequest::new()
             .chain_id(self.chain_id)
             .to(self.contract)
@@ -41,10 +40,8 @@ impl TxSender {
 
         log::info!("Transaction request: {:?}", &tx);
 
-        let tx = self.client.send_transaction(tx, None).await?.await?;
+        let tx = self.client.send_transaction(tx, None).await?;
 
-        log::info!("Transaction receipt: {:?}", &tx);
-
-        Ok(tx)
+        Ok(tx.tx_hash().encode_hex())
     }
 }

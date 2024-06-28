@@ -1,18 +1,20 @@
 use crate::tx::tx_signer::TxSender;
 use crate::utils::{fetch_json_from_pinata, get_fund_amount_and_ipfs_hash, hash_sha256, to_bytes32, u256_to_u8_vec, verify_bonsai, verify_local, verify_risc0_proof};
 use alloy_sol_types::{sol, SolCall, SolInterface};
-use axum::http::StatusCode;
+use axum::http::{HeaderValue, Method, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{get, post};
 use axum::{Extension, Json, Router};
 use serde::{Deserialize, Serialize};
 use sha2::Digest;
 use std::sync::Arc;
+use axum::http::header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE};
 use ethers::abi::AbiEncode;
 use ethers::prelude::U256;
 use thiserror::Error;
 use tokio::sync::RwLock;
 use tokio::task;
+use tower_http::cors::CorsLayer;
 
 mod prover;
 mod tx;
@@ -65,6 +67,7 @@ async fn main() {
     let pinata_api_key = load_env_value("PINATA_API_KEY");
     let bonsai_url = load_env_value("BONSAI_URL");
     let bonsai_api_key = load_env_value("BONSAI_API_KEY");
+    let cors_domain = load_env_value("CORS_DOMAIN");
 
     let api_setting = Arc::new(RwLock::new(ApiSetting {
         ethereum_sepolia_rpc_url,
@@ -75,6 +78,11 @@ async fn main() {
         bonsai_api_key,
     }));
 
+    let cors = CorsLayer::new()
+        .allow_origin(cors_domain.parse::<HeaderValue>().unwrap())
+        .allow_methods([Method::GET, Method::POST])
+        .allow_headers([ACCEPT, CONTENT_TYPE]);
+
     let app = Router::new()
         .route(
             "/prove/distributions",
@@ -84,7 +92,8 @@ async fn main() {
             "/healthcheck",
             get(|| async { "ok" })
         )
-        .layer(Extension(api_setting.clone()));
+        .layer(Extension(api_setting.clone()))
+        .layer(cors);
 
     let binding = format!("0.0.0.0:{}", api_port);
     let listener = tokio::net::TcpListener::bind(binding.as_str()).await.unwrap();
@@ -193,15 +202,10 @@ async fn post_prove_distributions_handler(
     .await
     .unwrap();
 
-    // let image_id = hex::decode("816cd61df85c5b854865341a8618e92fd8ee9f57900c2de01fbba606ec46efec").unwrap();
-    // let res = verify_risc0_proof(
-    //     ethereum_sepolia_rpc_url.clone(),
-    //     "0x36Be51Af39A2D430368Ffee8C664C46d2298083D".to_string(),
-    //     seal.clone(),
-    //     image_id,
-    //     post_state_digest.clone(),
-    //     hash_sha256(&journal.clone()).to_vec(),
-    // ).await;
+    println!("proof generation completed");
+    println!("seal: {:?}", hex::encode(&seal));
+    println!("postStateDigest: {:?}", hex::encode(&post_state_digest));
+    println!("journal: {:?}", hex::encode(&journal));
 
     let chain_id = u64::from_str_radix(body.chain_id.trim_start_matches("0x"), 16).unwrap();
 
@@ -212,10 +216,6 @@ async fn post_prove_distributions_handler(
         body.contract_address.as_str(),
     ).unwrap();
 
-    println!("seal: {:?}", hex::encode(&seal));
-    println!("postStateDigest: {:?}", hex::encode(&post_state_digest));
-    println!("journal: {:?}", hex::encode(&journal));
-
     let calldata = IFundManager::IFundManagerCalls::distributeFund(IFundManager::distributeFundCall {
         seal: alloy_primitives::Bytes::from(seal),
         postStateDigest: to_bytes32(&post_state_digest).into(),
@@ -223,12 +223,13 @@ async fn post_prove_distributions_handler(
     })
     .abi_encode();
 
-    let res = tx_sender.send(calldata).await;
-    let res = res.unwrap().unwrap();
+    println!("sending transaction, chain_id: {}, calldata: {:?}", chain_id, hex::encode(&calldata));
 
-    let tx_hash = hex::encode(res.transaction_hash.to_fixed_bytes().to_vec());
+    let tx_hash = tx_sender.send(calldata).await.unwrap();
+
+    println!("transaction sent: {:?}", tx_hash);
 
     Ok(Json(PostProveDistributionsResponse{
-        hash: format!("0x{tx_hash}"),
+        hash: tx_hash,
     }))
 }

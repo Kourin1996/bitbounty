@@ -123,6 +123,8 @@ impl BonsaiProver {
                         let receipt: Receipt = bincode::deserialize(&receipt_buf).unwrap();
                         // receipt.verify(BIT_BOUNTY_RISC0_GUEST_ID).expect("Receipt verification failed");
 
+                        println!("Proof Generation Session succeeded");
+
                         return Ok((session.uuid, receipt));
                     }
                     _ => {
@@ -172,7 +174,7 @@ impl BonsaiProver {
                         sleep(Duration::from_secs(10));
                     }
                     "SUCCEEDED" => {
-                        println!("Session succeeded: output={:?}", status_res.output);
+                        println!("Snark Proof Generation Session succeeded");
 
                         return match status_res.output {
                             Some(output) => Ok(output),
