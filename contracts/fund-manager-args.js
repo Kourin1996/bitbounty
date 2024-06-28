@@ -1,12 +1,4 @@
-import { ethers } from "hardhat";
-
-// // https://docs.chain.link/chainlink-functions/supported-networks
-// // Ethereum Sepolia
-// address chainLinkFunctionsRouter = 0xb83E47C2bC239B3bf370bc41e1459A34b41238D0;
-// bytes32 chainLinkFunctionsDonID = 0x66756e2d657468657265756d2d7365706f6c69612d3100000000000000000000;
-
-async function main() {
-  const gitHubFundManager = await ethers.deployContract("GitHubFundManager", [
+module.exports = [
     // ChainLink Functions Router
     "0xb83E47C2bC239B3bf370bc41e1459A34b41238D0",
     // ChainLink Functions DonID
@@ -19,16 +11,4 @@ async function main() {
     "0x36Be51Af39A2D430368Ffee8C664C46d2298083D",
     // Risc0 Image ID
     "0xe89eb53aef1d05d87ebaf657d8b579a983f4ad5ead789fbcbe16e36b3be15104",
-  ]);
-
-  await gitHubFundManager.waitForDeployment();
-
-  console.log(`GitHub Fund Manager is deployed to ${gitHubFundManager.target}`);
-}
-
-// We recommend this pattern to be able to use async/await everywhere
-// and properly handle errors.
-main().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
-});
+];

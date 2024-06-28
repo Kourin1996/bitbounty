@@ -1,43 +1,19 @@
 import { ethers } from "hardhat";
 
-const tokenName = "USD Tether";
-const tokenSymbol = "USDT";
-const initialHolder = "0x65d4ec89ce26763b4bea27692e5981d8cd3a58c7";
-const initialSupply = ethers.parseEther("100000");
+// ERC20 1: 0x90036B4F6F5b9BCA64c38eB04068cae03219B256
+// ERC20 2: 0x1B56C4a1372820ED7092A2d1Ac86c94257b1E317
 
 async function main() {
-  const erc20Factory = await ethers.getContractAt(
-    "ERC20Factory",
-    "0x0d26CFf3b5732AbAB9454df1750401Cc910eCcE8"
-  );
+  const erc20 = await ethers.deployContract("MyERC20", [
+    "SupportToken",
+    "ST",
+    "0x65d4Ec89Ce26763B4BEa27692E5981D8CD3A58C7",
+    ethers.parseEther("10000000000"),
+  ]);
 
-  const erc20Tx = await erc20Factory.deployToken(
-    tokenName,
-    tokenSymbol,
-    initialHolder,
-    initialSupply
-  );
+  await erc20.waitForDeployment();
 
-  console.log(`Deploying ERC20... tx=${erc20Tx.hash}`);
-
-  const receipt = await erc20Tx.wait();
-
-  const abi = [
-    "event TokenDeployed(string name, string symbol, address tokenAddress)",
-  ];
-  const iface = new ethers.Interface(abi);
-
-  for (const log of receipt?.logs ?? []) {
-    try {
-      const res = iface.parseLog(log);
-
-      if (res?.args !== undefined) {
-        console.log(
-          `ERC20 Deployed name: ${res?.args["name"]}, symbol: ${res?.args["symbol"]}, address: ${res?.args["tokenAddress"]}`
-        );
-      }
-    } catch (error) {}
-  }
+  console.log("ERC20 deployed: ", await erc20.getAddress());
 }
 
 // We recommend this pattern to be able to use async/await everywhere

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-struct Proof {
+struct ZKPassProof {
     bytes32 taskId;
     bytes32 schemaId;
     bytes32 uHash;
@@ -16,27 +16,25 @@ contract ZKPassVerifier {
     address public defaultAllocator =
         0x19a567b3b212a5b35bA0E3B600FbEd5c2eE9083d;
 
-    constructor() {}
-
-    function verify(Proof calldata _proof) public view returns (bool) {
-        bool a = verifyValidatorSignature(
-            _proof.taskId,
-            _proof.schemaId,
-            _proof.uHash,
-            // _proof.recipient,
-            _proof.publicFieldsHash,
-            _proof.validator,
-            _proof.validatorSignature
-        );
-
-        bool b = verifyAllocatorSignature(
-            _proof.taskId,
-            _proof.schemaId,
-            _proof.validator,
-            _proof.allocatorSignature
-        );
-
-        return a && b;
+    function verifyZKPass(
+        ZKPassProof calldata _proof
+    ) public view returns (bool) {
+        return
+            verifyValidatorSignature(
+                _proof.taskId,
+                _proof.schemaId,
+                _proof.uHash,
+                // _proof.recipient,
+                _proof.publicFieldsHash,
+                _proof.validator,
+                _proof.validatorSignature
+            ) &&
+            verifyAllocatorSignature(
+                _proof.taskId,
+                _proof.schemaId,
+                _proof.validator,
+                _proof.allocatorSignature
+            );
     }
 
     function verifyAllocatorSignature(

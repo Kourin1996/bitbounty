@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
+import "@nomicfoundation/hardhat-verify";
 
 const accounts = (process.env.PRIVATE_KEYS ?? "").split(",");
 
@@ -24,6 +25,9 @@ const config: HardhatUserConfig = {
       url: "https://base-sepolia.blockpi.network/v1/rpc/public",
       accounts: accounts,
     },
+  },
+  etherscan: {
+    apiKey: process.env.ETHERSCAN_API_KEY,
   },
 };
 
