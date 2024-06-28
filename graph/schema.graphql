@@ -1,0 +1,87 @@
+type UserAccount @entity {
+  id: Bytes! # Hash of GitHub Login
+  name: String! # GitHub Login
+  address: Bytes # Ethereum Address
+
+  # relationships
+  withdrawHistories: [WithdrawHistory!]! @derivedFrom(field: "account")
+  distributedHistories: [DistributedHistory!]! @derivedFrom(field: "account")
+  repositories: [RepositoryContributor!]! @derivedFrom(field: "account")
+}
+
+type Repository @entity {
+  id: ID!
+  index: BigInt!
+  organization: String!
+  name: String!
+  numberFunded: BigInt!
+
+  # relationships
+  funds: [RepositoryFund!]! @derivedFrom(field: "repository")
+  contributors: [RepositoryContributor!]! @derivedFrom(field: "repository")
+  fundHistories: [FundHistory!]! @derivedFrom(field: "repository")
+}
+
+type RepositoryFund @entity {
+  id: ID! # Concat(Repository Index, Token Address)
+  organizationAndRepository: String!
+  tokenAddress: Bytes!
+  fundedTimes: BigInt!
+  funded: BigInt!
+  withdrawn: BigInt!
+
+  # relationships
+  repository: Repository!
+}
+
+type RepositoryContributor @entity {
+  id: ID! # Concat(Repository ID + Token Address + GitHub Login)
+  name: String!
+  tokenAddress: Bytes!
+  distributed: BigInt!
+  withdrawn: BigInt!
+  repositoryID: ID!
+
+  # relationships
+  repository: Repository!
+  account: UserAccount!
+}
+
+type FundHistory @entity {
+  id: ID! # Hash of ()
+  index: BigInt!
+  funder: Bytes!
+  tokenAddress: Bytes!
+  amount: BigInt!
+  timestamp: BigInt!
+  transactionHash: Bytes!
+  blockHash: Bytes!
+  blockHeight: BigInt!
+
+  # relationships
+  repository: Repository!
+}
+
+type DistributedHistory @entity {
+  id: ID! # Concat(FundIndex + Login)
+  amount: BigInt!
+
+  # relationships
+  account: UserAccount!
+  fundHistory: FundHistory!
+}
+
+type WithdrawHistory @entity {
+  id: ID! # Concat(Repository Index + GitHub Login + Block Number)
+  recipient: Bytes!
+  tokenAddress: Bytes!
+  amount: BigInt!
+  timestamp: BigInt!
+  transactionHash: Bytes!
+  blockHash: Bytes!
+  blockHeight: BigInt!
+
+  # relationships
+  account: UserAccount!
+  repository: Repository!
+}
